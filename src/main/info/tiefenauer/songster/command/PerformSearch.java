@@ -1,8 +1,6 @@
 package main.info.tiefenauer.songster.command;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Observable;
 
 import main.info.tiefenauer.songster.event.PerformSearchEvent;
@@ -11,14 +9,20 @@ import main.info.tiefenauer.songster.model.AnalyzerFactory;
 import main.info.tiefenauer.songster.model.service.SongsterIndexer;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.xml.builders.TermQueryBuilder;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.util.Version;
 
 import com.google.common.eventbus.EventBus;
@@ -45,19 +49,26 @@ public class PerformSearch extends Observable{
 			reader = indexer.getReader();
 			indexSearcher = new IndexSearcher(reader);
 			TopScoreDocCollector collector = TopScoreDocCollector.create(50, true);
-			Query q = new QueryParser(Version.LUCENE_47, "lyrics", analyzer).parse(event.query);
-			indexSearcher.search(q, collector);;
+			BooleanQuery booleanQuery = new BooleanQuery();
+			Query lyricsQuery = new TermQuery(new Term("lyrics", event.query));
+			Query titleQuery = new TermQuery(new Term("title", event.query));
+			titleQuery.setBoost(1.0f);
+			lyricsQuery.setBoost(1.0f);
+			booleanQuery.add(lyricsQuery, Occur.MUST);
+			booleanQuery.add(titleQuery, Occur.SHOULD);
 			
-			ScoreDoc[] hits = collector.topDocs().scoreDocs;
-			List<Document> result = new ArrayList<Document>(); 
+			Query q = new QueryParser(Version.LUCENE_48, "lyrics", analyzer).parse(event.query);
+			indexSearcher.search(booleanQuery, collector);;
 			
+			ScoreDoc[] hits = collector.topDocs().scoreDocs;		
 			System.out.println("Found " + hits.length + " hits");
-			for (ScoreDoc scoreDoc : hits){
-				Document doc = indexSearcher.doc(scoreDoc.doc);
-				result.add(doc);
-				System.out.println(doc.get("path") + " score=" + scoreDoc.score);
+			for(ScoreDoc doc : hits){
+				Explanation explanation = indexSearcher.explain(q, doc.doc);
+				System.out.println(explanation.getDescription());
+				System.out.println(explanation.toString());
+				//System.out.println(explanation.getDetails());
 			}
-			eventBus.post(new SearchFinishedEvent(result));
+			eventBus.post(new SearchFinishedEvent(hits, indexSearcher));
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

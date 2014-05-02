@@ -1,15 +1,20 @@
 package main.info.tiefenauer.songster.event;
 
-import java.util.List;
-
-import org.apache.lucene.document.Document;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 
 public class SearchFinishedEvent extends Event {
 
-	public List<Document> result;
+	public ScoreDoc[] result;
+	public IndexSearcher searcher;
 	
-	public SearchFinishedEvent(List<Document> result){
+	/**
+	 * Constructor
+	 * @param result
+	 * @param searcher
+	 */
+	public SearchFinishedEvent(ScoreDoc[] result, IndexSearcher searcher){
 		this.result = result;
+		this.searcher = searcher;
 	}
 }

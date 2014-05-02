@@ -1,11 +1,14 @@
 package main.info.tiefenauer.songster.view;
 
+import java.io.IOException;
+
 import main.info.tiefenauer.songster.event.CreateIndexEvent;
 import main.info.tiefenauer.songster.event.PerformSearchEvent;
 import main.info.tiefenauer.songster.event.SearchFinishedEvent;
 import main.info.tiefenauer.songster.model.AnalyzerType;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.search.ScoreDoc;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
@@ -26,6 +29,10 @@ import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.swt.custom.ScrolledComposite;
 
 public class SongsterApplication {
 	
@@ -63,7 +70,7 @@ public class SongsterApplication {
 				System.exit(0);
 			}
 		});
-		shlSongster.setSize(541, 403);
+		shlSongster.setSize(541, 645);
 		shlSongster.setText("Songster");
 		shlSongster.setLayout(null);
 		
@@ -170,16 +177,20 @@ public class SongsterApplication {
 		
 
 		
-		resultTA = new StyledText(shlSongster, SWT.BORDER);
-		resultTA.setBounds(10, 110, 505, 224);
+		resultTA = new StyledText(shlSongster, SWT.V_SCROLL);
+		resultTA.setAlwaysShowScrollBars(false);
+		resultTA.setBounds(10, 110, 501, 466);
 
 	}
 
 	@Subscribe 
-	public void onSearchPerformed(SearchFinishedEvent event){
+	public void onSearchPerformed(SearchFinishedEvent event) throws IOException{
 		resultTA.setText("");
-		for (Document doc : event.result){
-			resultTA.append(doc.get("artist") + " - " + doc.get("title") + "\r\n");
+		int i=0;
+		for (ScoreDoc scoreDoc : event.result){
+			Document doc = event.searcher.doc(scoreDoc.doc);
+			String resultString = "" + ++i + " " + doc.get("artist") + " - " + doc.get("title") + " (" + scoreDoc.score + ")\r\n"; 
+			resultTA.append(resultString);
 		}
 	}
 }
