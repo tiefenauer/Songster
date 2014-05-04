@@ -13,8 +13,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.queryparser.xml.builders.TermQueryBuilder;
-import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.IndexSearcher;
@@ -22,7 +21,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.util.Version;
 
 import com.google.common.eventbus.EventBus;
@@ -39,7 +37,7 @@ public class PerformSearch extends Observable{
 	@Subscribe
 	public void performSearch(PerformSearchEvent event) {
 		System.out.println("Performing search: " + event.query);
-		Analyzer analyzer = AnalyzerFactory.create(event.type);
+		Analyzer analyzer = AnalyzerFactory.create(event.config);
 		
 		// recreate index
 		indexer.createIndex(analyzer);
@@ -50,12 +48,20 @@ public class PerformSearch extends Observable{
 			indexSearcher = new IndexSearcher(reader);
 			TopScoreDocCollector collector = TopScoreDocCollector.create(50, true);
 			BooleanQuery booleanQuery = new BooleanQuery();
-			Query lyricsQuery = new TermQuery(new Term("lyrics", event.query));
-			Query titleQuery = new TermQuery(new Term("title", event.query));
-			titleQuery.setBoost(1.0f);
-			lyricsQuery.setBoost(1.0f);
-			booleanQuery.add(lyricsQuery, Occur.MUST);
-			booleanQuery.add(titleQuery, Occur.SHOULD);
+			if (event.config.searchInLyrics){
+				Query lyricsQuery = new TermQuery(new Term("lyrics", event.query));
+				lyricsQuery.setBoost(event.config.lyricsBoost);
+				booleanQuery.add(lyricsQuery, Occur.SHOULD);
+			}
+			if (event.config.searchInTitle){
+				Query titleQuery = new TermQuery(new Term("title", event.query));
+				titleQuery.setBoost(event.config.titleBoost);
+				booleanQuery.add(titleQuery, Occur.SHOULD);
+			}
+			if (event.config.searchInArtist){
+				Query artistQuery = new TermQuery(new Term("artist", event.query));
+				booleanQuery.add(artistQuery, Occur.SHOULD);
+			}
 			
 			Query q = new QueryParser(Version.LUCENE_48, "lyrics", analyzer).parse(event.query);
 			indexSearcher.search(booleanQuery, collector);;
