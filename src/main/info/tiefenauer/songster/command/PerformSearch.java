@@ -9,6 +9,7 @@ import main.info.tiefenauer.songster.model.AnalyzerFactory;
 import main.info.tiefenauer.songster.model.service.SongsterIndexer;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -22,6 +23,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.util.Version;
+import org.tartarus.snowball.ext.PorterStemmer;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -38,6 +40,14 @@ public class PerformSearch extends Observable{
 	public void performSearch(PerformSearchEvent event) {
 		System.out.println("Performing search: " + event.query);
 		Analyzer analyzer = AnalyzerFactory.create(event.config);
+		
+		// preprocess query if stemming is enabled
+		if (event.config.useStemFilter){
+			PorterStemmer stemmer = new PorterStemmer();
+			stemmer.setCurrent(event.query.toLowerCase());
+			stemmer.stem();
+			event.query = stemmer.getCurrent();
+		}
 		
 		// recreate index
 		indexer.createIndex(analyzer);
@@ -64,7 +74,7 @@ public class PerformSearch extends Observable{
 			}
 			
 			Query q = new QueryParser(Version.LUCENE_48, "lyrics", analyzer).parse(event.query);
-			indexSearcher.search(booleanQuery, collector);;
+			indexSearcher.search(q, collector);
 			
 			ScoreDoc[] hits = collector.topDocs().scoreDocs;		
 			System.out.println("Found " + hits.length + " hits");
