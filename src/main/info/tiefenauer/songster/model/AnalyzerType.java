@@ -7,7 +7,7 @@ public enum AnalyzerType {
 	ENGLISH("EnglishAnalyzer"),
 	STANDARD("StandardAnalyzer"),
 	CLASSIC("ClassicAnalyzer"),
-	CUSTOM_WITH_SYNONYMS("CustomAnalyzerWithSynonyms");
+	CUSTOM("Custom");
 	
 	public final String type;
 	
