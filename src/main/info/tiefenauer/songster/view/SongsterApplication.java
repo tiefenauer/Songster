@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.tartarus.snowball.ext.PorterStemmer;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;

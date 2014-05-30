@@ -72,7 +72,7 @@ public abstract class SongsterIndexer {
 				title = nameParts[1];
 			
 			try {
-				lyrics = FileUtils.readFileToString(file);
+				lyrics = FileUtils.readFileToString(file).toLowerCase();
 				
 				// Felder erstellen
 				Field titleField = new StringField("title", title, Store.YES);
