@@ -30,13 +30,19 @@ public class SongsterRAMIndexer extends SongsterIndexer{
 	
 	@Override
 	public void createIndex() {
-		createIndex(new StandardAnalyzer(Version.LUCENE_47));
+		createIndex(new StandardAnalyzer(Version.LUCENE_48));
 	}
 
 	@Override
 	public void createIndex(Analyzer analyzer) {
 		indexDirectory = new RAMDirectory();
-		createIndex(analyzer, new RAMDirectory());
+		createIndex(analyzer, indexDirectory);
+		try {
+			indexDirectory.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	@Override
 	public IndexReader getReader() {

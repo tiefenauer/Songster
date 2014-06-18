@@ -7,9 +7,11 @@ import main.info.tiefenauer.songster.event.PerformSearchEvent;
 import main.info.tiefenauer.songster.event.SearchFinishedEvent;
 import main.info.tiefenauer.songster.model.AnalyzerFactory;
 import main.info.tiefenauer.songster.model.service.SongsterIndexer;
+import main.info.tiefenauer.songster.model.service.SongsterRAMIndexer;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.en.PorterStemFilter;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -50,11 +52,13 @@ public class PerformSearch extends Observable{
 		}
 		
 		// recreate index
+		indexer = new SongsterRAMIndexer();
 		indexer.createIndex(analyzer);
 		
 		IndexReader reader;
 		try {
-			reader = indexer.getReader();
+			reader = DirectoryReader.open(indexer.getIndexDirectiory());
+			//reader = indexer.getReader();
 			indexSearcher = new IndexSearcher(reader);
 			TopScoreDocCollector collector = TopScoreDocCollector.create(50, true);
 			BooleanQuery booleanQuery = new BooleanQuery();

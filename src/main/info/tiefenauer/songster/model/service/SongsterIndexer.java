@@ -107,5 +107,9 @@ public abstract class SongsterIndexer {
 	    System.out.println(numDocs + " documents added.");
 	    System.out.println("************************");	
 	}
+	
+	public Directory getIndexDirectiory(){
+		return indexDirectory;
+	}
 
 }
